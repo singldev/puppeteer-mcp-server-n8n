@@ -60,20 +60,16 @@ export async function runServer() {
     const app = express();
     const httpServer = http.createServer(app);
 
+    const transport = new SSEServerTransport('/', null as any); // We'll set the response later
+    server.connect(transport);
+
     app.get('/', (req, res) => {
-      const transport = new SSEServerTransport('/', res);
-      server.connect(transport);
+      (transport as any).res = res;
       transport.start();
     });
 
     app.post('/', express.raw({ type: 'application/json' }), async (req, res) => {
-      const transport = server.transport as SSEServerTransport;
-      if (transport) {
-        await transport.handlePostMessage(req, res);
-      } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('MCP transport not initialized');
-      }
+      await transport.handlePostMessage(req, res);
     });
 
     httpServer.listen(port, () => {
