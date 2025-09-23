@@ -60,13 +60,13 @@ export async function runServer() {
     const app = express();
     const httpServer = http.createServer(app);
 
-    app.get('/mcp', (req, res) => {
-      const transport = new SSEServerTransport('/mcp', res);
+    app.get('/', (req, res) => {
+      const transport = new SSEServerTransport('/', res);
       server.connect(transport);
       transport.start();
     });
 
-    app.post('/mcp', express.raw({ type: 'application/json' }), async (req, res) => {
+    app.post('/', express.raw({ type: 'application/json' }), async (req, res) => {
       const transport = server.transport as SSEServerTransport;
       if (transport) {
         await transport.handlePostMessage(req, res);
