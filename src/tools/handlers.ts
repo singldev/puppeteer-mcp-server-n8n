@@ -16,8 +16,10 @@ export async function handleToolCall(
   state: BrowserState,
   server: Server
 ): Promise<CallToolResult> {
-  logger.debug('Tool call received', { tool: name, arguments: args });
+  logger.info('Tool call received', { tool: name, arguments: args });
   const page = await ensureBrowser();
+
+  let result: CallToolResult;
 
   switch (name) {
     case "puppeteer_connect_active_tab":
@@ -33,7 +35,7 @@ export async function handleToolCall(
         );
         const url = await connectedPage.url();
         const title = await connectedPage.title();
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Successfully connected to browser\\nActive webpage: ${title} (${url})`,
@@ -45,7 +47,7 @@ export async function handleToolCall(
         const isConnectionError = errorMessage.includes('connect to Chrome debugging port') || 
                                 errorMessage.includes('Target closed');
         
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Failed to connect to browser: ${errorMessage}\\n\\n` +
@@ -62,6 +64,7 @@ export async function handleToolCall(
           isError: true,
         };
       }
+      break;
 
     case "puppeteer_navigate":
       try {
@@ -81,7 +84,7 @@ export async function handleToolCall(
         }
 
         logger.info('Navigation successful', { url: args.url, status });
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Successfully navigated to ${args.url} (Status: ${status})`,
@@ -91,7 +94,7 @@ export async function handleToolCall(
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error('Navigation failed', { url: args.url, error: errorMessage });
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Navigation failed: ${errorMessage}\\nThis could be due to:\\n- Network connectivity issues\\n- Site blocking automated access\\n- Page requiring authentication\\n- Navigation timeout\\n\\nTry using a different URL or checking network connectivity.`,
@@ -99,6 +102,7 @@ export async function handleToolCall(
           isError: true,
         };
       }
+      break;
 
     case "puppeteer_screenshot": {
       const width = args.width ?? 800;
@@ -110,38 +114,39 @@ export async function handleToolCall(
         page.screenshot({ encoding: "base64", fullPage: false }));
 
       if (!screenshot) {
-        return {
+        result = {
           content: [{
             type: "text",
             text: args.selector ? `Element not found: ${args.selector}` : "Screenshot failed",
           }],
           isError: true,
         };
+      } else {
+        state.screenshots.set(args.name, screenshot);
+        notifyScreenshotUpdate(server);
+
+        result = {
+          content: [
+            {
+              type: "text",
+              text: `Screenshot '${args.name}' taken at ${width}x${height}`,
+            } as TextContent,
+            {
+              type: "image",
+              data: screenshot,
+              mimeType: "image/png",
+            } as ImageContent,
+          ],
+          isError: false,
+        };
       }
-
-      state.screenshots.set(args.name, screenshot);
-      notifyScreenshotUpdate(server);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Screenshot '${args.name}' taken at ${width}x${height}`,
-          } as TextContent,
-          {
-            type: "image",
-            data: screenshot,
-            mimeType: "image/png",
-          } as ImageContent,
-        ],
-        isError: false,
-      };
+      break;
     }
 
     case "puppeteer_click":
       try {
         await page.click(args.selector);
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Clicked: ${args.selector}`,
@@ -149,7 +154,7 @@ export async function handleToolCall(
           isError: false,
         };
       } catch (error) {
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Failed to click ${args.selector}: ${(error as Error).message}`,
@@ -157,12 +162,13 @@ export async function handleToolCall(
           isError: true,
         };
       }
+      break;
 
     case "puppeteer_fill":
       try {
         await page.waitForSelector(args.selector);
         await page.type(args.selector, args.value);
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Filled ${args.selector} with: ${args.value}`,
@@ -170,7 +176,7 @@ export async function handleToolCall(
           isError: false,
         };
       } catch (error) {
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Failed to fill ${args.selector}: ${(error as Error).message}`,
@@ -178,12 +184,13 @@ export async function handleToolCall(
           isError: true,
         };
       }
+      break;
 
     case "puppeteer_select":
       try {
         await page.waitForSelector(args.selector);
         await page.select(args.selector, args.value);
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Selected ${args.selector} with: ${args.value}`,
@@ -191,7 +198,7 @@ export async function handleToolCall(
           isError: false,
         };
       } catch (error) {
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Failed to select ${args.selector}: ${(error as Error).message}`,
@@ -199,12 +206,13 @@ export async function handleToolCall(
           isError: true,
         };
       }
+      break;
 
     case "puppeteer_hover":
       try {
         await page.waitForSelector(args.selector);
         await page.hover(args.selector);
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Hovered ${args.selector}`,
@@ -212,7 +220,7 @@ export async function handleToolCall(
           isError: false,
         };
       } catch (error) {
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Failed to hover ${args.selector}: ${(error as Error).message}`,
@@ -220,6 +228,7 @@ export async function handleToolCall(
           isError: true,
         };
       }
+      break;
 
     case "puppeteer_evaluate":
       try {
@@ -235,7 +244,7 @@ export async function handleToolCall(
         logger.debug('Executing script in browser', { scriptLength: args.script.length });
         
         // Wrap the script in a function that returns a serializable result
-        const result = await page.evaluate(`(async () => {
+        const evalResult = await page.evaluate(`(async () => {
           try {
             const result = (function() { ${args.script} })();
             return result;
@@ -249,21 +258,21 @@ export async function handleToolCall(
         page.off('console', consoleListener);
         
         logger.debug('Script execution result', {
-          resultType: typeof result,
-          hasResult: result !== undefined,
+          resultType: typeof evalResult,
+          hasResult: evalResult !== undefined,
           logCount: logs.length
         });
 
-        return {
+        result = {
           content: [{
             type: "text",
-            text: `Execution result:\\n${JSON.stringify(result, null, 2)}\\n\\nConsole output:\\n${logs.join('\\n')}`,
+            text: `Execution result:\\n${JSON.stringify(evalResult, null, 2)}\\n\\nConsole output:\\n${logs.join('\\n')}`,
           }],
           isError: false,
         };
       } catch (error) {
         logger.error('Script evaluation failed', { error: error instanceof Error ? error.message : String(error) });
-        return {
+        result = {
           content: [{
             type: "text",
             text: `Script execution failed: ${error instanceof Error ? error.message : String(error)}\\n\\nPossible causes:\\n- Syntax error in script\\n- Execution timeout\\n- Browser security restrictions\\n- Serialization issues with complex objects`,
@@ -271,9 +280,10 @@ export async function handleToolCall(
           isError: true,
         };
       }
+      break;
 
     default:
-      return {
+      result = {
         content: [{
           type: "text",
           text: `Unknown tool: ${name}`,
@@ -281,4 +291,6 @@ export async function handleToolCall(
         isError: true,
       };
   }
+  logger.info('Tool call result', { result });
+  return result;
 }

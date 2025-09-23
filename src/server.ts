@@ -63,12 +63,18 @@ export async function runServer() {
     const transport = new SSEServerTransport('/', null as any); // We'll set the response later
     server.connect(transport);
 
+    app.use((req, res, next) => {
+      logger.info(`Request: ${req.method} ${req.url}`);
+      next();
+    });
+
     app.get('/', (req, res) => {
       (transport as any).res = res;
       transport.start();
     });
 
     app.post('/', express.raw({ type: 'application/json' }), async (req, res) => {
+      logger.info('Request body:', req.body.toString());
       await transport.handlePostMessage(req, res);
     });
 
