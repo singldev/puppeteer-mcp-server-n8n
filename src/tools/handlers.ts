@@ -7,14 +7,10 @@ import {
   connectToExistingBrowser,
   getCurrentPage 
 } from "../browser/connection.js";
-import { notifyConsoleUpdate, notifyScreenshotUpdate } from "../resources/handlers.js";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-
 export async function handleToolCall(
-  name: string, 
-  args: any, 
-  state: BrowserState,
-  server: Server
+  name: string,
+  args: any,
+  state: BrowserState
 ): Promise<CallToolResult> {
   logger.info('Tool call received', { tool: name, arguments: args });
   const page = await ensureBrowser();
@@ -30,7 +26,6 @@ export async function handleToolCall(
           args.targetUrl,
           (logEntry) => {
             state.consoleLogs.push(logEntry);
-            notifyConsoleUpdate(server);
           }
         );
         const url = await connectedPage.url();
@@ -123,8 +118,7 @@ export async function handleToolCall(
         };
       } else {
         state.screenshots.set(args.name, screenshot);
-        notifyScreenshotUpdate(server);
-
+  
         result = {
           content: [
             {

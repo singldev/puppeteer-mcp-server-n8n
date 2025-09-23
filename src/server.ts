@@ -52,7 +52,7 @@ export async function runServer() {
         case 'tools/call':
           try {
             const { name, arguments: args } = params;
-            const toolResult = await handleToolCall(name, args, state, null as any);
+            const toolResult = await handleToolCall(name, args, state);
             result = { content: toolResult.content };
           } catch (e: any) {
             logger.error('Tool call error', { error: e.message });
