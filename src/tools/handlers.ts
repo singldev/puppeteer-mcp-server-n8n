@@ -19,6 +19,7 @@ export async function handleToolCall(
 
   switch (name) {
     case "puppeteer_connect_active_tab":
+      await ensureBrowser();
       result = {
         content: [{
           type: "text",
