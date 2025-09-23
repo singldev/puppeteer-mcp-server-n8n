@@ -71,7 +71,6 @@ export async function runServer() {
       const transport = new SSEServerTransport('/', res);
       transports.set(transport.sessionId, transport);
       server.connect(transport);
-      transport.start();
       res.on('close', () => {
         transports.delete(transport.sessionId);
       });
