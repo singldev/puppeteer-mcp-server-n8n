@@ -22,7 +22,12 @@ export const logger = winston.createLogger({
   ),
   defaultMeta: { service: 'mcp-puppeteer' },
   transports: [
-    // Write to rotating log files only to avoid interfering with MCP protocol
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    }),
     new winston.transports.DailyRotateFile({
       filename: path.join(logsDir, 'mcp-puppeteer-%DATE%.log'),
       datePattern: 'YYYY-MM-DD',
