@@ -9,6 +9,7 @@ import { BrowserState } from "./types/global.js";
 import { closeBrowser } from "./browser/connection.js";
 import express from 'express';
 import http from 'http';
+import { URL } from "url";
 
 // Initialize global state
 const state: BrowserState = {
@@ -59,9 +60,7 @@ export async function runServer() {
     const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
     const app = express();
     const httpServer = http.createServer(app);
-
-    const transport = new SSEServerTransport('/', null as any); // We'll set the response later
-    server.connect(transport);
+    const transports = new Map<string, SSEServerTransport>();
 
     app.use((req, res, next) => {
       logger.info(`Request: ${req.method} ${req.url}`);
@@ -69,13 +68,30 @@ export async function runServer() {
     });
 
     app.get('/', (req, res) => {
-      (transport as any).res = res;
+      const transport = new SSEServerTransport('/', res);
+      transports.set(transport.sessionId, transport);
+      server.connect(transport);
       transport.start();
+      res.on('close', () => {
+        transports.delete(transport.sessionId);
+      });
     });
 
     app.post('/', express.raw({ type: 'application/json' }), async (req, res) => {
-      logger.info('Request body:', req.body.toString());
-      await transport.handlePostMessage(req, res);
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const sessionId = url.searchParams.get('sessionId');
+      if (!sessionId) {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end('Missing sessionId');
+        return;
+      }
+      const transport = transports.get(sessionId);
+      if (transport) {
+        await transport.handlePostMessage(req, res);
+      } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Session not found');
+      }
     });
 
     httpServer.listen(port, () => {
