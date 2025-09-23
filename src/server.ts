@@ -78,7 +78,8 @@ export async function runServer() {
     });
 
     app.post('/', express.raw({ type: 'application/json' }), async (req, res) => {
-      const sessionId = req.query.sessionId as string;
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const sessionId = url.searchParams.get('sessionId');
       if (!sessionId) {
         res.writeHead(400, { 'Content-Type': 'text/plain' });
         res.end('Missing sessionId');
