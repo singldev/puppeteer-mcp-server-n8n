@@ -1,0 +1,39 @@
+{
+    "name": "puppeteer-mcp-server-n8n",
+    "version": "0.7.2",
+    "description": "Адаптированная версия puppeteer-mcp-server для работы с n8n через SSE.",
+    "license": "MIT",
+    "author": "Meraj Mehrabi",
+    "homepage": "https://github.com/singldev/puppeteer-mcp-server-n8n",
+    "bugs": "https://github.com/singldev/puppeteer-mcp-server-n8n/issues",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/singldev/puppeteer-mcp-server-n8n.git"
+    },
+    "type": "module",
+    "bin": {
+        "mcp-server-puppeteer": "dist/index.js"
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc && shx chmod +x dist/*.js",
+        "start": "node dist/index.js",
+        "watch": "tsc --watch"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "1.0.1",
+        "@types/express": "^5.0.3",
+        "express": "^5.1.0",
+        "puppeteer": "^23.4.0",
+        "winston": "^3.11.0",
+        "winston-daily-rotate-file": "^5.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.17",
+        "@types/winston": "^2.4.4",
+        "shx": "^0.3.4",
+        "typescript": "^5.6.2"
+    }
+}
