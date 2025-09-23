@@ -224,13 +224,23 @@ export async function handleToolCall(
           logCount: logs.length
         });
 
-        result = {
-          content: [{
-            type: "text",
-            text: `Execution result:\\n${JSON.stringify(evalResult, null, 2)}\\n\\nConsole output:\\n${logs.join('\\n')}`,
-          }],
-          isError: false,
-        };
+        if (evalResult === undefined) {
+          result = {
+            content: [{
+              type: "text",
+              text: "Script executed, but returned undefined.",
+            }],
+            isError: true,
+          };
+        } else {
+          result = {
+            content: [{
+              type: "text",
+              text: `Execution result:\\n${JSON.stringify(evalResult, null, 2)}\\n\\nConsole output:\\n${logs.join('\\n')}`,
+            }],
+            isError: false,
+          };
+        }
       } catch (error) {
         logger.error('Script evaluation failed', { error: error instanceof Error ? error.message : String(error) });
         result = {
