@@ -52,7 +52,8 @@ export async function runServer() {
         case 'tools/call':
           try {
             const { name, arguments: args } = params;
-            result = await handleToolCall(name, args, state, null as any);
+            const toolResult = await handleToolCall(name, args, state, null as any);
+            result = { content: toolResult.content };
           } catch (e: any) {
             logger.error('Tool call error', { error: e.message });
             return res.status(500).json({ jsonrpc: '2.0', error: { code: -32603, message: e.message }, id });
