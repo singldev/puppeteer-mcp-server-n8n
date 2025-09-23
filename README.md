@@ -31,45 +31,6 @@
 PORT=8888 npm start
 ```
 
-### Конфигурация Nginx
-
-Для корректной работы сервера через Nginx, используйте следующую конфигурацию:
-
-```nginx
-server {
-    listen 80;
-    server_name mail.ii-assist.ru;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name mail.ii-assist.ru;
-
-    ssl_certificate /etc/ssl/ii-assist/ii-assist-full.crt;
-    ssl_certificate_key /etc/ssl/ii-assist/ii-assist.key;
-    ssl_trusted_certificate /etc/ssl/ii-assist/ii-assist.ca-bundle;
-
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-    ssl_prefer_server_ciphers on;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000$request_uri;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Для SSE / real-time соединений
-        proxy_set_header Connection '';
-        proxy_http_version 1.1;
-        chunked_transfer_encoding off;
-        proxy_buffering off;
-        proxy_cache off;
-    }
-}
-```
 
 ## Запуск
 
