@@ -35,7 +35,7 @@ export async function runServer() {
         return res.status(400).json({ jsonrpc: '2.0', error: { code: -32600, message: 'Invalid Request' }, id });
       }
 
-      logger.info(`Request: ${method}`, { params });
+      logger.info(`Request: ${method}`, { body: req.body });
 
       let result: any;
       switch (method) {
