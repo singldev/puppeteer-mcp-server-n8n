@@ -3,20 +3,10 @@ import { Tool } from "@modelcontextprotocol/sdk/types.js";
 export const TOOLS: Tool[] = [
   {
     name: "puppeteer_connect_active_tab",
-    description: "Connect to an existing Chrome instance with remote debugging enabled",
+    description: "Ensures connection to the browser instance managed by the server. Should be called before any other browser operation.",
     inputSchema: {
       type: "object",
-      properties: {
-        targetUrl: { 
-          type: "string", 
-          description: "Optional URL of the target tab to connect to. If not provided, connects to the first available tab." 
-        },
-        debugPort: {
-          type: "number",
-          description: "Optional Chrome debugging port (default: 9222)",
-          default: 9222
-        }
-      },
+      properties: {},
       required: [],
     },
   },
