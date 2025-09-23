@@ -59,6 +59,9 @@ export async function runServer() {
             return res.status(500).json({ jsonrpc: '2.0', error: { code: -32603, message: e.message }, id });
           }
           break;
+        case 'notifications/initialized':
+          // n8n sends this notification, but we don't need to do anything with it.
+          return res.status(204).send();
         default:
           return res.status(404).json({ jsonrpc: '2.0', error: { code: -32601, message: 'Method not found' }, id });
       }
