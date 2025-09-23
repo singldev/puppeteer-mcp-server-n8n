@@ -56,7 +56,7 @@ process.on("SIGTERM", gracefulShutdown);
 // Start the server
 export async function runServer() {
   try {
-    const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
+    const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000;
     const app = express();
     const httpServer = http.createServer(app);
 
