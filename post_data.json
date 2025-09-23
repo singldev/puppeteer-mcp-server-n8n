@@ -1,0 +1,1 @@
+{"jsonrpc": "2.0", "method": "tools/call", "params": {"name": "puppeteer_navigate", "arguments": {"url": "https://google.com"}}}
