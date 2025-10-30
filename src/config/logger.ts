@@ -2,6 +2,9 @@ import winston from 'winston';
 import 'winston-daily-rotate-file';
 import path from 'path';
 import fs from 'fs';
+import { getEnvironmentConfig } from './environment.js';
+
+const { logLevel } = getEnvironmentConfig();
 
 // Create logs directory if it doesn't exist
 const logsDir = path.join(process.cwd(), 'logs');
@@ -11,7 +14,7 @@ if (!fs.existsSync(logsDir)) {
 
 // Configure Winston logger
 export const logger = winston.createLogger({
-  level: 'debug',
+  level: logLevel,
   format: winston.format.combine(
     winston.format.timestamp({
       format: 'YYYY-MM-DD HH:mm:ss.SSS'
